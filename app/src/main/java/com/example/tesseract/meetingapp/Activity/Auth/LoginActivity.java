@@ -13,6 +13,7 @@ import android.widget.Button;
 import android.widget.EditText;
 
 import com.example.tesseract.meetingapp.Activity.Main.MeetingsActivity;
+import com.example.tesseract.meetingapp.Other.User;
 import com.example.tesseract.meetingapp.R;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
@@ -24,6 +25,7 @@ import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.auth.PhoneAuthCredential;
 import com.google.firebase.auth.PhoneAuthProvider;
+import com.google.firebase.database.FirebaseDatabase;
 
 import java.util.concurrent.TimeUnit;
 
@@ -108,6 +110,7 @@ public class LoginActivity extends AppCompatActivity implements
                         if (task.isSuccessful()) {
                             FirebaseUser user = task.getResult().getUser();
                             startActivity(new Intent(LoginActivity.this, MeetingsActivity.class));
+                            FirebaseDatabase.getInstance().getReference().child("users").child(user.getPhoneNumber()).setValue(new User(user.getPhoneNumber()));
                             finish();
                         } else {
                             if (task.getException() instanceof FirebaseAuthInvalidCredentialsException) {
@@ -176,7 +179,6 @@ public class LoginActivity extends AppCompatActivity implements
                     mVerificationField.setError("Cannot be empty.");
                     return;
                 }
-
                 verifyPhoneNumberWithCode(mVerificationId, code);
                 break;
             case R.id.button_resend:

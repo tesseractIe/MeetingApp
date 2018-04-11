@@ -3,6 +3,7 @@
     package="com.example.tesseract.meetingapp">
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
 
     <application
         android:allowBackup="true"
@@ -11,16 +12,19 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
-        <activity android:name=".Activity.Auth.LoginActivity" />
         <activity android:name=".Activity.Auth.SplashActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <activity android:name=".Activity.Auth.LoginActivity" />
         <activity android:name=".Activity.Main.MeetingsActivity" />
-        <activity android:name=".Activity.Main.AddEventActivity"></activity>
+        <activity android:name=".Activity.Main.AddEventActivity" />
+        <meta-data
+            android:name="com.google.android.geo.API_KEY"
+            android:value="AIzaSyBBi8J61agS7_4IVC_WR9eK1a8Hv1WA1E4"/>
     </application>
+
 
 </manifest>
