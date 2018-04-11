@@ -1,0 +1,42 @@
+{
+  "project_info": {
+    "project_number": "373205477877",
+    "firebase_url": "https://meetingapp-5d48b.firebaseio.com",
+    "project_id": "meetingapp-5d48b",
+    "storage_bucket": "meetingapp-5d48b.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:373205477877:android:64a2494f20015b6f",
+        "android_client_info": {
+          "package_name": "com.example.tesseract.meetingapp"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "373205477877-klriv6c869vi3tkq0lg1v3hk4t0l5sj1.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCW3pv_WdrfasSUkEi2ghzHakxL3Hj5dSI"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 1,
+          "other_platform_oauth_client": []
+        },
+        "ads_service": {
+          "status": 2
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
