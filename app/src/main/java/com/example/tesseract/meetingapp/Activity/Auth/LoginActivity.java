@@ -1,11 +1,10 @@
 package com.example.tesseract.meetingapp.Activity.Auth;
 
 import android.content.Intent;
-import android.support.annotation.NonNull;
+import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
-import android.os.Bundle;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.View;
@@ -13,13 +12,11 @@ import android.widget.Button;
 import android.widget.EditText;
 
 import com.example.tesseract.meetingapp.Activity.Main.MeetingsActivity;
-import com.example.tesseract.meetingapp.Other.User;
+import com.example.tesseract.meetingapp.Models.MeetingID;
+import com.example.tesseract.meetingapp.Models.User;
 import com.example.tesseract.meetingapp.R;
-import com.google.android.gms.tasks.OnCompleteListener;
-import com.google.android.gms.tasks.Task;
 import com.google.firebase.FirebaseException;
 import com.google.firebase.FirebaseTooManyRequestsException;
-import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException;
 import com.google.firebase.auth.FirebaseUser;
@@ -29,11 +26,12 @@ import com.google.firebase.database.FirebaseDatabase;
 
 import java.util.concurrent.TimeUnit;
 
+import butterknife.BindView;
+import butterknife.ButterKnife;
+
 public class LoginActivity extends AppCompatActivity implements
         View.OnClickListener {
 
-    EditText mPhoneNumberField, mVerificationField;
-    Button mStartButton, mVerifyButton, mResendButton;
 
     private FirebaseAuth mAuth;
     private PhoneAuthProvider.ForceResendingToken mResendToken;
@@ -42,19 +40,22 @@ public class LoginActivity extends AppCompatActivity implements
 
     private final String TAG = "LoginActivity";
 
+    @BindView(R.id.button_start_verification)
+    public Button mStartButton;
+    @BindView(R.id.button_verify_phone)
+    public Button mVerifyButton;
+    @BindView(R.id.button_resend)
+    public Button mResendButton;
+    @BindView(R.id.field_phone_number)
+    public EditText mPhoneNumberField;
+    @BindView(R.id.field_verification_code)
+    public EditText mVerificationField;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
-
-        mPhoneNumberField = findViewById(R.id.field_phone_number);
-        mVerificationField = findViewById(R.id.field_verification_code);
-
-        mStartButton = findViewById(R.id.button_start_verification);
-        mVerifyButton = findViewById(R.id.button_verify_phone);
-        mResendButton = findViewById(R.id.button_resend);
-
+        ButterKnife.bind(this);
         mStartButton.setOnClickListener(this);
         mVerifyButton.setOnClickListener(this);
         mResendButton.setOnClickListener(this);
@@ -69,7 +70,6 @@ public class LoginActivity extends AppCompatActivity implements
             @Override
             public void onVerificationCompleted(PhoneAuthCredential credential) {
                 signInWithPhoneAuthCredential(credential);
-                Log.e(TAG,"onVerificationCompleted");
             }
 
             @Override
@@ -104,18 +104,15 @@ public class LoginActivity extends AppCompatActivity implements
 
     private void signInWithPhoneAuthCredential(PhoneAuthCredential credential) {
         mAuth.signInWithCredential(credential)
-                .addOnCompleteListener(this, new OnCompleteListener<AuthResult>() {
-                    @Override
-                    public void onComplete(@NonNull Task<AuthResult> task) {
-                        if (task.isSuccessful()) {
-                            FirebaseUser user = task.getResult().getUser();
-                            startActivity(new Intent(LoginActivity.this, MeetingsActivity.class));
-                            FirebaseDatabase.getInstance().getReference().child("users").child(user.getPhoneNumber()).setValue(new User(user.getPhoneNumber()));
-                            finish();
-                        } else {
-                            if (task.getException() instanceof FirebaseAuthInvalidCredentialsException) {
-                                mVerificationField.setError("Invalid code.");
-                            }
+                .addOnCompleteListener(this, task -> {
+                    if (task.isSuccessful()) {
+                        FirebaseUser user = task.getResult().getUser();
+                        startActivity(new Intent(LoginActivity.this, MeetingsActivity.class));
+                        FirebaseDatabase.getInstance().getReference().child("users").child(user.getPhoneNumber()).setValue(new User(user.getPhoneNumber(),new MeetingID("")));
+                        finish();
+                    } else {
+                        if (task.getException() instanceof FirebaseAuthInvalidCredentialsException) {
+                            mVerificationField.setError("Invalid code.");
                         }
                     }
                 });

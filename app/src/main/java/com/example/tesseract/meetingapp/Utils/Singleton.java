@@ -1,6 +1,4 @@
-package com.example.tesseract.meetingapp.Other;
-
-import android.widget.EditText;
+package com.example.tesseract.meetingapp.Utils;
 
 public class Singleton {
     private static Singleton instance;

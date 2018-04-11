@@ -4,17 +4,14 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.support.constraint.ConstraintLayout;
 import android.support.v7.app.AppCompatActivity;
-import android.util.Log;
-import android.view.View;
 import android.widget.EditText;
 import android.widget.TextView;
 
 import com.codetroopers.betterpickers.calendardatepicker.CalendarDatePickerDialogFragment;
-import com.crystal.crystalrangeseekbar.interfaces.OnRangeSeekbarChangeListener;
 import com.crystal.crystalrangeseekbar.widgets.CrystalRangeSeekbar;
-import com.example.tesseract.meetingapp.Other.Meeting;
-import com.example.tesseract.meetingapp.Other.MeetingUsers;
-import com.example.tesseract.meetingapp.Other.User;
+import com.example.tesseract.meetingapp.Models.Meeting;
+import com.example.tesseract.meetingapp.Models.MeetingID;
+import com.example.tesseract.meetingapp.Models.User;
 import com.example.tesseract.meetingapp.R;
 import com.google.android.gms.common.GooglePlayServicesNotAvailableException;
 import com.google.android.gms.common.GooglePlayServicesRepairableException;
@@ -40,7 +37,7 @@ public class AddEventActivity extends AppCompatActivity implements CalendarDateP
     ConstraintLayout fragmentLayout;
 
     @BindView(R.id.meeting_time)
-    CrystalRangeSeekbar rangeSeekbar;
+    CrystalRangeSeekbar rangeSeekBar;
     @BindView(R.id.meeting_topic)
     EditText meetingTopic;
     @BindView(R.id.meeting_contacts)
@@ -62,10 +59,12 @@ public class AddEventActivity extends AppCompatActivity implements CalendarDateP
                 .setValue(new Meeting(FirebaseAuth.getInstance().getCurrentUser().getPhoneNumber(),
                         meetingTopic.getText().toString(), key, 1523439493, 1523439493, "shop", 1));
         List<User> list = new ArrayList<>();
-        list.add(new User(FirebaseAuth.getInstance().getCurrentUser().getPhoneNumber()));
-        list.add(new User(meetingContacts.getText().toString()));
-        FirebaseDatabase.getInstance().getReference().child("meetingsUsers").push()
-                .setValue(new MeetingUsers(key, FirebaseAuth.getInstance().getCurrentUser().getPhoneNumber(), list));
+        list.add(new User(FirebaseAuth.getInstance().getCurrentUser().getPhoneNumber(),new MeetingID(key)));
+        for(int i = 0;i<list.size();i++){
+            FirebaseDatabase.getInstance().getReference().child("users").child(list.get(i).getPhoneNumber()).child("meetings").push()
+                    .setValue(new MeetingID(key));
+        }
+        finish();
     }
 
     @OnClick(R.id.cancel_button)
@@ -81,34 +80,23 @@ public class AddEventActivity extends AppCompatActivity implements CalendarDateP
         mainLayout = findViewById(R.id.main_layout);
         //fragmentLayout = findViewById(R.id.fragment_layout);
 
-        rangeSeekbar.setOnRangeSeekbarChangeListener(new OnRangeSeekbarChangeListener() {
-            @Override
-            public void valueChanged(Number minValue, Number maxValue) {
-                int maxVal;
-                if (minValue.intValue() == maxValue.intValue()) {
-                    maxVal = maxValue.intValue() + 30;
-                } else {
-                    maxVal = maxValue.intValue();
-                }
-                startTime.setText("Start:\n" + secondsToString(minValue.intValue()));
-                endTime.setText("End:\n" + secondsToString(maxVal));
+        rangeSeekBar.setOnRangeSeekbarChangeListener((minValue, maxValue) -> {
+            int maxVal;
+            if (minValue.intValue() == maxValue.intValue()) {
+                maxVal = maxValue.intValue() + 30;
+            } else {
+                maxVal = maxValue.intValue();
             }
+            startTime.setText("Start:\n" + secondsToString(minValue.intValue()));
+            endTime.setText("End:\n" + secondsToString(maxVal));
         });
 
-        meetingLocation.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                startPlacePicker();
-            }
-        });
+        meetingLocation.setOnClickListener(v -> startPlacePicker());
 
-        meetingDate.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                CalendarDatePickerDialogFragment cdp = new CalendarDatePickerDialogFragment()
-                        .setOnDateSetListener(AddEventActivity.this);
-                cdp.show(getSupportFragmentManager(), FRAG_TAG_DATE_PICKER);
-            }
+        meetingDate.setOnClickListener(v -> {
+            CalendarDatePickerDialogFragment cdp = new CalendarDatePickerDialogFragment()
+                    .setOnDateSetListener(AddEventActivity.this);
+            cdp.show(getSupportFragmentManager(), FRAG_TAG_DATE_PICKER);
         });
     }
 

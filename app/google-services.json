@@ -15,6 +15,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "373205477877-c9lrj21gl76t542sive088kb0iq4bo5p.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.tesseract.meetingapp",
+            "certificate_hash": "26c032de658de6c7dfb50c74eccd9d3796153efb"
+          }
+        },
+        {
           "client_id": "373205477877-klriv6c869vi3tkq0lg1v3hk4t0l5sj1.apps.googleusercontent.com",
           "client_type": 3
         }
@@ -29,8 +37,13 @@
           "status": 1
         },
         "appinvite_service": {
-          "status": 1,
-          "other_platform_oauth_client": []
+          "status": 2,
+          "other_platform_oauth_client": [
+            {
+              "client_id": "373205477877-klriv6c869vi3tkq0lg1v3hk4t0l5sj1.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         },
         "ads_service": {
           "status": 2

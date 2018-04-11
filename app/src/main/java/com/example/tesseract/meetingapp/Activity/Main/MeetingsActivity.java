@@ -1,22 +1,23 @@
 package com.example.tesseract.meetingapp.Activity.Main;
 
 import android.content.Intent;
-import android.graphics.RectF;
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.support.v7.app.AppCompatActivity;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
-import android.view.View;
-import android.widget.Button;
 import android.widget.Toast;
 
-import com.alamkanak.weekview.MonthLoader;
 import com.alamkanak.weekview.WeekView;
 import com.alamkanak.weekview.WeekViewEvent;
 import com.example.tesseract.meetingapp.Activity.Auth.LoginActivity;
 import com.example.tesseract.meetingapp.R;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
 
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -43,27 +44,15 @@ public class MeetingsActivity extends AppCompatActivity {
 
         mWeekView = findViewById(R.id.weekView);
 
+        mWeekView.setOnEventClickListener((event, eventRect) -> Toast.makeText(getApplicationContext(), event.getName() + " " + event.getLocation(), Toast.LENGTH_SHORT).show());
 
-        mWeekView.setOnEventClickListener(new WeekView.EventClickListener() {
-            @Override
-            public void onEventClick(WeekViewEvent event, RectF eventRect) {
-                Toast.makeText(getApplicationContext(), event.getName() + " " + event.getLocation(), Toast.LENGTH_SHORT).show();
-            }
+        mWeekView.setMonthChangeListener((newYear, newMonth) -> {
+            List<WeekViewEvent> events = getEvents(newYear, newMonth);
+            return events;
         });
 
-        mWeekView.setMonthChangeListener(new MonthLoader.MonthChangeListener() {
-            @Override
-            public List<? extends WeekViewEvent> onMonthChange(int newYear, int newMonth) {
-                List<WeekViewEvent> events = getEvents(newYear, newMonth);
-                return events;
-            }
-        });
+        mWeekView.setEventLongPressListener((event, eventRect) -> {
 
-        mWeekView.setEventLongPressListener(new WeekView.EventLongPressListener() {
-            @Override
-            public void onEventLongPress(WeekViewEvent event, RectF eventRect) {
-
-            }
         });
 
         Calendar nextYear = Calendar.getInstance();
@@ -88,6 +77,26 @@ public class MeetingsActivity extends AppCompatActivity {
                 finish();
         }
         return true;
+    }
+
+    @Override
+    protected void onResume() {
+        DatabaseReference database = FirebaseDatabase.getInstance().getReference();
+        DatabaseReference ref = database.child("users");
+
+        ref.addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot dataSnapshot) {
+//                User user = dataSnapshot.getValue(User.class);
+  //              Log.e("phone: ",user.getPhoneNumber());
+            }
+
+            @Override
+            public void onCancelled(DatabaseError databaseError) {
+
+            }
+        });
+        super.onResume();
     }
 
     private void startAddMeetingActivity() {

@@ -1,16 +1,14 @@
-package com.example.tesseract.meetingapp.Other;
-
-import java.util.List;
+package com.example.tesseract.meetingapp.Models;
 
 public class Meeting {
 
-    private String             meetingId;
-    private String          userPhoneNumber;
-    private String          meetingTopic;
-    private long            startTime;
-    private long            endTime;
-    private String          location;
-    private int             state;
+    private String meetingId;
+    private String userPhoneNumber;
+    private String meetingTopic;
+    private String location;
+    private long startTime;
+    private long endTime;
+    private int state;
 
     public Meeting(String userPhoneNumber, String meetingTopic, String meetingId, long startTime, long endTime, String location, int state) {
         this.userPhoneNumber = userPhoneNumber;
