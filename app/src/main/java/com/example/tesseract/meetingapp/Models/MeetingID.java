@@ -7,6 +7,9 @@ public class MeetingID {
         return meetingID;
     }
 
+    public MeetingID() {
+    }
+
     public MeetingID(String meetingID) {
 
         this.meetingID = meetingID;

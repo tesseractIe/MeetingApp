@@ -1,8 +1,10 @@
 package com.example.tesseract.meetingapp.Activity.Main;
 
 import android.content.Intent;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
@@ -10,7 +12,10 @@ import android.widget.Toast;
 
 import com.alamkanak.weekview.WeekView;
 import com.alamkanak.weekview.WeekViewEvent;
+import com.alamkanak.weekview.WeekViewLoader;
 import com.example.tesseract.meetingapp.Activity.Auth.LoginActivity;
+import com.example.tesseract.meetingapp.Models.Meeting;
+import com.example.tesseract.meetingapp.Models.UserMeetingStatus;
 import com.example.tesseract.meetingapp.R;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.DataSnapshot;
@@ -46,11 +51,6 @@ public class MeetingsActivity extends AppCompatActivity {
 
         mWeekView.setOnEventClickListener((event, eventRect) -> Toast.makeText(getApplicationContext(), event.getName() + " " + event.getLocation(), Toast.LENGTH_SHORT).show());
 
-        mWeekView.setMonthChangeListener((newYear, newMonth) -> {
-            List<WeekViewEvent> events = getEvents(newYear, newMonth);
-            return events;
-        });
-
         mWeekView.setEventLongPressListener((event, eventRect) -> {
 
         });
@@ -81,14 +81,32 @@ public class MeetingsActivity extends AppCompatActivity {
 
     @Override
     protected void onResume() {
+        List<Meeting> myMeetings = new ArrayList<>();
         DatabaseReference database = FirebaseDatabase.getInstance().getReference();
-        DatabaseReference ref = database.child("users");
-
+        DatabaseReference ref = database.child("meetings");
         ref.addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
-//                User user = dataSnapshot.getValue(User.class);
-  //              Log.e("phone: ",user.getPhoneNumber());
+                List<Meeting> list = new ArrayList<>();
+                myMeetings.clear();
+                //create new list
+                for (DataSnapshot ds : dataSnapshot.getChildren()) {
+                    String uId = ds.getKey();
+                    Meeting meeting = ds.getValue(Meeting.class);
+                    list.add(meeting);
+                }
+
+                for (int i = 0; i < list.size(); i++) {
+                    List<UserMeetingStatus> list2 = list.get(i).getMeetingUsers();
+                    Log.e("list: ",list2.toString());
+                    for (int i2 = 0; i2 < list2.size(); i2++) {
+                        if (list2.get(i2).getPhoneNumber().equals(FirebaseAuth.getInstance().getCurrentUser().getPhoneNumber())) {
+                            Log.e("list: ",list.get(i).getUserPhoneNumber());
+                            myMeetings.add(list.get(i));
+                        }
+                    }
+                }
+                mWeekView.notifyDatasetChanged();
             }
 
             @Override
@@ -96,6 +114,34 @@ public class MeetingsActivity extends AppCompatActivity {
 
             }
         });
+        mWeekView.setMonthChangeListener((newYear, newMonth) -> {
+            List<WeekViewEvent> events = setEvents(myMeetings);
+            return events;
+        });
+        mWeekView.setWeekViewLoader(new WeekViewLoader() {
+
+            int i = 1;
+
+            @Override
+            public double toWeekViewPeriodIndex(Calendar instance) {
+                return instance.getTime().getDate() + instance.getTime().getDate();
+            }
+
+            @Override
+            public List<WeekViewEvent> onLoad(int periodIndex) {
+                if (i == 3) {
+                    i = 1;
+                    List<WeekViewEvent> events = setEvents(myMeetings);
+                    return events;
+                } else {
+                    i++;
+                    // return blank list or empty list
+                    List<WeekViewEvent> events = new ArrayList<>();
+                    return events;
+                }
+            }
+        });
+
         super.onResume();
     }
 
@@ -104,14 +150,18 @@ public class MeetingsActivity extends AppCompatActivity {
         startActivity(intent);
     }
 
-    private List<WeekViewEvent> getEvents(int newYear, int newMonth) {
+    private List<WeekViewEvent> setEvents(List<Meeting> myMeetings) {
         List<WeekViewEvent> list = new ArrayList<>();
-        Calendar start = Calendar.getInstance();
-        Calendar stop = Calendar.getInstance();
-        stop.add(Calendar.HOUR, 1);
-        WeekViewEvent day1 = new WeekViewEvent(1, "new event", "shop", start, stop);
-        list.add(day1);
-
+        for (int i = 0; i < myMeetings.size(); i++) {
+            Calendar start = Calendar.getInstance();
+            start.setTime(new Date(myMeetings.get(i).getStartTime()));
+            Calendar stop = Calendar.getInstance();
+            stop.setTime(new Date(myMeetings.get(i).getEndTime()));
+            WeekViewEvent newEvent = new WeekViewEvent(i, myMeetings.get(i).getMeetingTopic(), myMeetings.get(i).getLocation(), start, stop);
+            newEvent.setColor(Color.rgb(0,255,100));
+            list.add(newEvent);
+        }
         return list;
     }
+
 }

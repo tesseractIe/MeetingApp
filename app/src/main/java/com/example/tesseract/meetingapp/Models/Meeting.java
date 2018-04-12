@@ -1,8 +1,10 @@
 package com.example.tesseract.meetingapp.Models;
 
+import java.util.List;
+
 public class Meeting {
 
-    private String meetingId;
+    private List<UserMeetingStatus> meetingUsers;
     private String userPhoneNumber;
     private String meetingTopic;
     private String location;
@@ -10,14 +12,21 @@ public class Meeting {
     private long endTime;
     private int state;
 
-    public Meeting(String userPhoneNumber, String meetingTopic, String meetingId, long startTime, long endTime, String location, int state) {
+    public Meeting() {
+    }
+
+    public Meeting(List<UserMeetingStatus> meetingUsers, String userPhoneNumber, String meetingTopic, String location, long startTime, long endTime, int state) {
+        this.meetingUsers = meetingUsers;
         this.userPhoneNumber = userPhoneNumber;
         this.meetingTopic = meetingTopic;
-        this.meetingId = meetingId;
+        this.location = location;
         this.startTime = startTime;
         this.endTime = endTime;
-        this.location = location;
         this.state = state;
+    }
+
+    public List<UserMeetingStatus> getMeetingUsers() {
+        return meetingUsers;
     }
 
     public String getUserPhoneNumber() {
@@ -26,10 +35,6 @@ public class Meeting {
 
     public String getMeetingTopic() {
         return meetingTopic;
-    }
-
-    public String getMeetingId() {
-        return meetingId;
     }
 
     public long getStartTime() {

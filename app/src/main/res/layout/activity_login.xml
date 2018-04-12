@@ -34,6 +34,13 @@
                 android:inputType="phone" />
 
             <EditText
+                android:id="@+id/field_nickname"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Nickname"
+                android:inputType="textAutoComplete" />
+
+            <EditText
                 android:id="@+id/field_verification_code"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -61,14 +68,21 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_weight="1.0"
-                android:text="verify phone auth"/>
+                android:text="Verify phone auth"/>
 
             <Button
                 android:id="@+id/button_resend"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_weight="1.0"
-                android:text="resend phone auth" />
+                android:text="Resend phone auth" />
+
+            <Button
+                android:id="@+id/button_set_nickname"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_weight="1.0"
+                android:text="Set nickname" />
         </LinearLayout>
     </LinearLayout>
 </LinearLayout>
