@@ -22,6 +22,7 @@ import com.google.android.gms.common.GooglePlayServicesRepairableException;
 import com.google.android.gms.location.places.Place;
 import com.google.android.gms.location.places.ui.PlacePicker;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 
 import java.text.SimpleDateFormat;
@@ -38,16 +39,19 @@ public class AddEventActivity extends AppCompatActivity implements CalendarDateP
 
     private static final String FRAG_TAG_DATE_PICKER = "fragment_date_picker_name";
 
-    Date date;
-    int startTimeInSec;
-    int endTimeInSec;
-    List<User> selectedUsers;
+    private Date date;
+    private int startTimeInSec;
+    private int endTimeInSec;
+    private List<User> selectedUsers;
+    private DatabaseReference db;
+    private String myPhoneNumber;
 
+    private FirebaseListAdapter<User> adapter;
+
+    @BindView(R.id.main_layout)
     ConstraintLayout mainLayout;
+    @BindView(R.id.fragment_layout)
     ConstraintLayout fragmentLayout;
-
-    FirebaseListAdapter<User> adapter;
-
     @BindView(R.id.meeting_time)
     CrystalRangeSeekbar rangeSeekBar;
     @BindView(R.id.meeting_topic)
@@ -88,15 +92,15 @@ public class AddEventActivity extends AppCompatActivity implements CalendarDateP
         tempCalendar2.setTime(tempDate);
         tempCalendar2.add(Calendar.MINUTE, endTimeInSec);
         if (Calendar.getInstance().getTime().getTime() > tempCalendar.getTime().getTime()) {
-            Toast.makeText(this, "False time!", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, R.string.false_time, Toast.LENGTH_SHORT).show();
         } else {
             List<UserMeetingStatus> phoneNumbers = new ArrayList<>();
             UserMeetingStatus list = new UserMeetingStatus(FirebaseAuth.getInstance().getCurrentUser().getPhoneNumber(), 1);
             phoneNumbers.add(list);
             for (User u : selectedUsers) {
-                phoneNumbers.add(new UserMeetingStatus(u.getPhoneNumber(),1));
+                phoneNumbers.add(new UserMeetingStatus(u.getPhoneNumber(), 1));
             }
-            FirebaseDatabase.getInstance().getReference().child("meetings").push()
+            db.child("meetings").push()
                     .setValue(new Meeting(phoneNumbers, FirebaseAuth.getInstance().getCurrentUser().getPhoneNumber(),
                             meetingTopic.getText().toString(), meetingLocation.getText().toString(), tempCalendar.getTime().getTime(), tempCalendar2.getTime().getTime(), 1));
             finish();
@@ -113,8 +117,8 @@ public class AddEventActivity extends AppCompatActivity implements CalendarDateP
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_add_event);
         ButterKnife.bind(this);
-        mainLayout = findViewById(R.id.main_layout);
-        fragmentLayout = findViewById(R.id.fragment_layout);
+        db = FirebaseDatabase.getInstance().getReference();
+
         userList.setChoiceMode(ListView.CHOICE_MODE_MULTIPLE);
         fragmentLayout.setVisibility(View.INVISIBLE);
         selectedUsers = new ArrayList<>();
@@ -148,7 +152,7 @@ public class AddEventActivity extends AppCompatActivity implements CalendarDateP
             cdp.show(getSupportFragmentManager(), FRAG_TAG_DATE_PICKER);
         });
         List<User> userListTemp = new ArrayList<>();
-        adapter = new FirebaseListAdapter<User>(this, User.class, R.layout.item_user, FirebaseDatabase.getInstance().getReference().child("users")) {
+        adapter = new FirebaseListAdapter<User>(this, User.class, R.layout.item_user, db.child("users")) {
             @Override
             protected void populateView(View v, User model, int position) {
                 userListTemp.add(position, model);

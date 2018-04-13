@@ -13,5 +13,6 @@
     <string name="continue_text">Continue...</string>
     <string name="confirmed">Сonfirm</string>
     <string name="cancel_dialog">Exit</string>
+    <string name="false_time">False time!</string>
 
 </resources>
