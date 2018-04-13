@@ -34,6 +34,7 @@ dependencies {
     implementation 'com.google.firebase:firebase-firestore:12.0.1'
     implementation 'com.google.firebase:firebase-core:12.0.1'
     implementation 'com.google.firebase:firebase-auth:12.0.1'
+    implementation 'com.firebaseui:firebase-ui:0.6.0'
     //Services
     implementation 'com.google.android.gms:play-services-places:12.0.1'
     //ButterKnife

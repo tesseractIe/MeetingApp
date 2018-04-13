@@ -4,15 +4,19 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.support.constraint.ConstraintLayout;
 import android.support.v7.app.AppCompatActivity;
+import android.view.View;
 import android.widget.EditText;
+import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import com.codetroopers.betterpickers.calendardatepicker.CalendarDatePickerDialogFragment;
 import com.crystal.crystalrangeseekbar.widgets.CrystalRangeSeekbar;
 import com.example.tesseract.meetingapp.Models.Meeting;
+import com.example.tesseract.meetingapp.Models.User;
 import com.example.tesseract.meetingapp.Models.UserMeetingStatus;
 import com.example.tesseract.meetingapp.R;
+import com.firebase.ui.database.FirebaseListAdapter;
 import com.google.android.gms.common.GooglePlayServicesNotAvailableException;
 import com.google.android.gms.common.GooglePlayServicesRepairableException;
 import com.google.android.gms.location.places.Place;
@@ -37,9 +41,12 @@ public class AddEventActivity extends AppCompatActivity implements CalendarDateP
     Date date;
     int startTimeInSec;
     int endTimeInSec;
+    List<User> selectedUsers;
 
     ConstraintLayout mainLayout;
     ConstraintLayout fragmentLayout;
+
+    FirebaseListAdapter<User> adapter;
 
     @BindView(R.id.meeting_time)
     CrystalRangeSeekbar rangeSeekBar;
@@ -55,32 +62,43 @@ public class AddEventActivity extends AppCompatActivity implements CalendarDateP
     TextView startTime;
     @BindView(R.id.end_time)
     TextView endTime;
+    @BindView(R.id.user_list)
+    ListView userList;
 
+    @OnClick(R.id.button_contacts_continue)
+    public void contactsContinue() {
+        mainLayout.setVisibility(View.VISIBLE);
+        fragmentLayout.setVisibility(View.INVISIBLE);
+    }
+
+    @OnClick(R.id.meeting_contacts)
+    public void openContacts() {
+        mainLayout.setVisibility(View.INVISIBLE);
+        fragmentLayout.setVisibility(View.VISIBLE);
+    }
 
     @OnClick(R.id.create_meeting)
     public void addNewMeeting() {
         Date tempDate = date;
         Calendar tempCalendar = Calendar.getInstance();
         tempCalendar.setTime(tempDate);
-        tempCalendar.add(Calendar.MINUTE,startTimeInSec);
+        tempCalendar.add(Calendar.MINUTE, startTimeInSec);
 
         Calendar tempCalendar2 = Calendar.getInstance();
         tempCalendar2.setTime(tempDate);
-        tempCalendar2.add(Calendar.MINUTE,endTimeInSec);
-        if(Calendar.getInstance().getTime().getTime()>tempCalendar.getTime().getTime()){
-            Toast.makeText(this,"False time!",Toast.LENGTH_SHORT).show();
-        }else{
+        tempCalendar2.add(Calendar.MINUTE, endTimeInSec);
+        if (Calendar.getInstance().getTime().getTime() > tempCalendar.getTime().getTime()) {
+            Toast.makeText(this, "False time!", Toast.LENGTH_SHORT).show();
+        } else {
             List<UserMeetingStatus> phoneNumbers = new ArrayList<>();
-            UserMeetingStatus list = new UserMeetingStatus(FirebaseAuth.getInstance().getCurrentUser().getPhoneNumber(),1);
-            UserMeetingStatus list2 = new UserMeetingStatus(FirebaseAuth.getInstance().getCurrentUser().getPhoneNumber(),2);
-            UserMeetingStatus list3 = new UserMeetingStatus(FirebaseAuth.getInstance().getCurrentUser().getPhoneNumber(),3);
+            UserMeetingStatus list = new UserMeetingStatus(FirebaseAuth.getInstance().getCurrentUser().getPhoneNumber(), 1);
             phoneNumbers.add(list);
-            phoneNumbers.add(list2);
-            phoneNumbers.add(list3);
-            String key = FirebaseDatabase.getInstance().getReference("meetings").push().getKey();
+            for (User u : selectedUsers) {
+                phoneNumbers.add(new UserMeetingStatus(u.getPhoneNumber(),1));
+            }
             FirebaseDatabase.getInstance().getReference().child("meetings").push()
-                    .setValue(new Meeting(phoneNumbers,FirebaseAuth.getInstance().getCurrentUser().getPhoneNumber(),
-                            meetingTopic.getText().toString(),meetingLocation.getText().toString(), tempCalendar.getTime().getTime(), tempCalendar2.getTime().getTime(),  1));
+                    .setValue(new Meeting(phoneNumbers, FirebaseAuth.getInstance().getCurrentUser().getPhoneNumber(),
+                            meetingTopic.getText().toString(), meetingLocation.getText().toString(), tempCalendar.getTime().getTime(), tempCalendar2.getTime().getTime(), 1));
             finish();
         }
     }
@@ -96,7 +114,10 @@ public class AddEventActivity extends AppCompatActivity implements CalendarDateP
         setContentView(R.layout.activity_add_event);
         ButterKnife.bind(this);
         mainLayout = findViewById(R.id.main_layout);
-        //fragmentLayout = findViewById(R.id.fragment_layout);
+        fragmentLayout = findViewById(R.id.fragment_layout);
+        userList.setChoiceMode(ListView.CHOICE_MODE_MULTIPLE);
+        fragmentLayout.setVisibility(View.INVISIBLE);
+        selectedUsers = new ArrayList<>();
 
         rangeSeekBar.setOnRangeSeekbarChangeListener((minValue, maxValue) -> {
             startTimeInSec = minValue.intValue();
@@ -126,6 +147,41 @@ public class AddEventActivity extends AppCompatActivity implements CalendarDateP
                     .setOnDateSetListener(AddEventActivity.this);
             cdp.show(getSupportFragmentManager(), FRAG_TAG_DATE_PICKER);
         });
+        List<User> userListTemp = new ArrayList<>();
+        adapter = new FirebaseListAdapter<User>(this, User.class, R.layout.item_user, FirebaseDatabase.getInstance().getReference().child("users")) {
+            @Override
+            protected void populateView(View v, User model, int position) {
+                userListTemp.add(position, model);
+                TextView messageUser = v.findViewById(R.id.message_user);
+                TextView messageText = v.findViewById(R.id.message_text);
+                messageUser.setText(model.getNickname());
+                messageText.setText(model.getPhoneNumber());
+            }
+
+            @Override
+            public boolean isEnabled(int position) {
+                for (User u : userListTemp) {
+                    if (selectedUsers.contains(u)) {
+                        return false;
+                    }
+                }
+                if (FirebaseAuth.getInstance().getCurrentUser().getPhoneNumber().equals(userListTemp.get(position).getPhoneNumber())) {
+                    return false;
+                }
+                return true;
+            }
+        };
+        userList.setAdapter(adapter);
+        userList.setOnItemClickListener((parent, view, position, id) -> {
+            mainLayout.setVisibility(View.VISIBLE);
+            fragmentLayout.setVisibility(View.INVISIBLE);
+            selectedUsers.add(userListTemp.get(position));
+            StringBuilder usersString = new StringBuilder();
+            for (User u : selectedUsers) {
+                usersString.append(u.getNickname()).append(" ");
+            }
+            meetingContacts.setText(usersString);
+        });
     }
 
     @Override
@@ -142,12 +198,12 @@ public class AddEventActivity extends AppCompatActivity implements CalendarDateP
     public void onDateSet(CalendarDatePickerDialogFragment dialog, int year, int monthOfYear, int dayOfMonth) {
         date = new Date(year - 1900, monthOfYear, dayOfMonth);
         Calendar currentDate = Calendar.getInstance();
-        currentDate.add(Calendar.DAY_OF_WEEK,-1);
+        currentDate.add(Calendar.DAY_OF_WEEK, -1);
         SimpleDateFormat sdfDate = new SimpleDateFormat("dd-MM-yyyy");
         String strDate = sdfDate.format(date);
-        if(currentDate.getTime().getTime()>date.getTime()){
-            Toast.makeText(this,"False date!",Toast.LENGTH_SHORT).show();
-        }else {
+        if (currentDate.getTime().getTime() > date.getTime()) {
+            Toast.makeText(this, "False date!", Toast.LENGTH_SHORT).show();
+        } else {
             meetingDate.setText(strDate);
         }
     }
