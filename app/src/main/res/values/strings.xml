@@ -3,7 +3,6 @@
     <string name="send_code">Send code</string>
     <string name="phone_number">Phone number</string>
     <string name="create_meeting">Create Meeting</string>
-    <string name="cancel">Cancel</string>
     <string name="meeting_topic">Meeting topic</string>
     <string name="contacts">Contacts</string>
     <string name="date">Date</string>
@@ -14,5 +13,21 @@
     <string name="confirmed">Сonfirm</string>
     <string name="cancel_dialog">Exit</string>
     <string name="false_time">False time!</string>
+    <string name="start_time">Start:\n</string>
+    <string name="end_time">End:\n</string>
+    <string name="false_date">False date!</string>
+    <string name="empty_field">Can`t be empty.</string>
+    <string name="invalid_code">Invalid code.</string>
+    <string name="invalid_phone_number">Invalid phone number.</string>
+    <string name="quota_exceeded">Quota exceeded.</string>
+    <string name="please_wait">Please wait...</string>
+    <string name="offline_mode">Offline Mode</string>
+    <string name="confirm">Confirm</string>
+    <string name="cancel">Cancel</string>
+    <string name="no_internet">No Internet</string>
+    <string name="please_connect_to_internet">Please, connect to wi-fi.</string>
+    <string name="connect">Connect</string>
+    <string name="some_field_is_empty">Some field is failed.</string>
+    <string name="connecting">Connecting...</string>
 
 </resources>

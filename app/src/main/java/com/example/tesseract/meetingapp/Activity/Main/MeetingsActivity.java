@@ -1,15 +1,18 @@
 package com.example.tesseract.meetingapp.Activity.Main;
 
+import android.app.ProgressDialog;
 import android.content.Intent;
 import android.graphics.Color;
 import android.graphics.RectF;
 import android.os.Bundle;
+import android.support.design.widget.FloatingActionButton;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
+import android.widget.Toast;
 
 import com.alamkanak.weekview.WeekView;
 import com.alamkanak.weekview.WeekViewEvent;
@@ -42,9 +45,13 @@ public class MeetingsActivity extends AppCompatActivity {
     private UserMeetingStatus selectedMeeting;
     private DatabaseReference db;
     private AlertDialog dialog;
+    private ProgressDialog progressDialog;
 
     @BindView(R.id.weekView)
     WeekView mWeekView;
+
+    @BindView(R.id.add_meeting)
+    FloatingActionButton addButton;
 
     @OnClick(R.id.add_meeting)
     public void addMeeting() {
@@ -56,9 +63,50 @@ public class MeetingsActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_mettings);
         ButterKnife.bind(this);
+        initViews();
         initAlertDialog();
         initViewsListeners();
+        initFirebase();
         db = FirebaseDatabase.getInstance().getReference();
+    }
+
+    private void initViews() {
+        addButton.hide();
+        progressDialog = new ProgressDialog(this);
+        progressDialog.setMessage(getString(R.string.connecting));
+        progressDialog.setCancelable(false);
+        progressDialog.show();
+    }
+
+
+    int connectionCounter = 0;
+
+    private void initFirebase() {
+        FirebaseDatabase.getInstance().getReference(".info/connected").addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot snapshot) {
+                boolean connected = snapshot.getValue(Boolean.class);
+                connectionCounter++;
+                if (!connected) {
+                    if (connectionCounter > 1) {
+                        progressDialog.hide();
+                        addButton.hide();
+                        Toast.makeText(MeetingsActivity.this, R.string.offline_mode, Toast.LENGTH_SHORT).show();
+                    }else{
+                        connectionCounter = 0;
+                    }
+
+                } else {
+                    progressDialog.hide();
+                    addButton.show();
+                }
+            }
+
+            @Override
+            public void onCancelled(DatabaseError error) {
+
+            }
+        });
     }
 
     /**
@@ -66,10 +114,10 @@ public class MeetingsActivity extends AppCompatActivity {
      */
     private void initAlertDialog() {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setPositiveButton("Confirm", (dialog, id) -> {
+        builder.setPositiveButton(R.string.confirm, (dialog, id) -> {
             setSelectedMeetingStatus(MeetingStatus.MEETING_CONFIRMED);
         });
-        builder.setNegativeButton("Cancel", (dialog, id) -> {
+        builder.setNegativeButton(R.string.cancel, (dialog, id) -> {
             setSelectedMeetingStatus(MeetingStatus.MEETING_CANCELED);
         });
         dialog = builder.create();
@@ -104,6 +152,7 @@ public class MeetingsActivity extends AppCompatActivity {
 
     /**
      * Change selected meeting status.
+     *
      * @param status - Meeting status
      */
     private void setSelectedMeetingStatus(MeetingStatus status) {
@@ -147,6 +196,7 @@ public class MeetingsActivity extends AppCompatActivity {
 
     @Override
     protected void onResume() {
+        db.onDisconnect().setValue("Offline Mode");
         db.child("meetings").addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
@@ -179,10 +229,12 @@ public class MeetingsActivity extends AppCompatActivity {
 
         mWeekView.setWeekViewLoader(new WeekViewLoader() {//three view fix
             int i = 1;
+
             @Override
             public double toWeekViewPeriodIndex(Calendar instance) {
                 return instance.getTime().getDate() + instance.getTime().getDate();
             }
+
             @Override
             public List<WeekViewEvent> onLoad(int periodIndex) {
                 if (i == 3) {
@@ -223,18 +275,18 @@ public class MeetingsActivity extends AppCompatActivity {
 
             for (UserMeetingStatus u : myMeetings.get(i).getMeetingUsers()) {
                 usersStatus.append(u.getPhoneNumber()).append(" : ");
-                if(u.getMeetingStatus() == 1){
+                if (u.getMeetingStatus() == 1) {
                     usersStatus.append("o").append("\n");
                 }
-                if(u.getMeetingStatus() == 2){
+                if (u.getMeetingStatus() == 2) {
                     usersStatus.append("v").append("\n");
                 }
-                if(u.getMeetingStatus() == 3){
+                if (u.getMeetingStatus() == 3) {
                     usersStatus.append("x").append("\n");
                 }
             }
             WeekViewEvent newEvent = new WeekViewEvent(i, myMeetings.get(i).getMeetingTopic(), myMeetings.get(i).getLocation()
-                    +"\n"+usersStatus, start, stop);
+                    + "\n" + usersStatus, start, stop);
             for (UserMeetingStatus u : myMeetings.get(i).getMeetingUsers()) {
 
                 if (FirebaseAuth.getInstance().getCurrentUser().getPhoneNumber().equals(u.getPhoneNumber())) {

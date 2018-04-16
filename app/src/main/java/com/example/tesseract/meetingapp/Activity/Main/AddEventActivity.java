@@ -1,5 +1,6 @@
 package com.example.tesseract.meetingapp.Activity.Main;
 
+import android.app.ProgressDialog;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.constraint.ConstraintLayout;
@@ -22,8 +23,11 @@ import com.google.android.gms.common.GooglePlayServicesRepairableException;
 import com.google.android.gms.location.places.Place;
 import com.google.android.gms.location.places.ui.PlacePicker;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -44,7 +48,8 @@ public class AddEventActivity extends AppCompatActivity implements CalendarDateP
     private int endTimeInSec;
     private List<User> selectedUsers;
     private DatabaseReference db;
-    private String myPhoneNumber;
+    int connectionCounter = 0;
+    private ProgressDialog progressDialog;
 
     private FirebaseListAdapter<User> adapter;
 
@@ -83,27 +88,34 @@ public class AddEventActivity extends AppCompatActivity implements CalendarDateP
 
     @OnClick(R.id.create_meeting)
     public void addNewMeeting() {
-        Date tempDate = date;
-        Calendar tempCalendar = Calendar.getInstance();
-        tempCalendar.setTime(tempDate);
-        tempCalendar.add(Calendar.MINUTE, startTimeInSec);
+        if(!meetingTopic.getText().toString().equals("")&&!
+                meetingContacts.getText().toString().equals("")&&
+                !meetingLocation.getText().toString().equals("")&&
+                !meetingDate.getText().toString().equals("")){
+            Date tempDate = date;
+            Calendar tempCalendar = Calendar.getInstance();
+            tempCalendar.setTime(tempDate);
+            tempCalendar.add(Calendar.MINUTE, startTimeInSec);
 
-        Calendar tempCalendar2 = Calendar.getInstance();
-        tempCalendar2.setTime(tempDate);
-        tempCalendar2.add(Calendar.MINUTE, endTimeInSec);
-        if (Calendar.getInstance().getTime().getTime() > tempCalendar.getTime().getTime()) {
-            Toast.makeText(this, R.string.false_time, Toast.LENGTH_SHORT).show();
-        } else {
-            List<UserMeetingStatus> phoneNumbers = new ArrayList<>();
-            UserMeetingStatus list = new UserMeetingStatus(FirebaseAuth.getInstance().getCurrentUser().getPhoneNumber(), 1);
-            phoneNumbers.add(list);
-            for (User u : selectedUsers) {
-                phoneNumbers.add(new UserMeetingStatus(u.getPhoneNumber(), 1));
+            Calendar tempCalendar2 = Calendar.getInstance();
+            tempCalendar2.setTime(tempDate);
+            tempCalendar2.add(Calendar.MINUTE, endTimeInSec);
+            if (Calendar.getInstance().getTime().getTime() > tempCalendar.getTime().getTime()) {
+                Toast.makeText(this, R.string.false_time, Toast.LENGTH_SHORT).show();
+            } else {
+                List<UserMeetingStatus> phoneNumbers = new ArrayList<>();
+                UserMeetingStatus list = new UserMeetingStatus(FirebaseAuth.getInstance().getCurrentUser().getPhoneNumber(), 1);
+                phoneNumbers.add(list);
+                for (User u : selectedUsers) {
+                    phoneNumbers.add(new UserMeetingStatus(u.getPhoneNumber(), 1));
+                }
+                db.child("meetings").push()
+                        .setValue(new Meeting(phoneNumbers, FirebaseAuth.getInstance().getCurrentUser().getPhoneNumber(),
+                                meetingTopic.getText().toString(), meetingLocation.getText().toString(), tempCalendar.getTime().getTime(), tempCalendar2.getTime().getTime(), 1));
+                finish();
             }
-            db.child("meetings").push()
-                    .setValue(new Meeting(phoneNumbers, FirebaseAuth.getInstance().getCurrentUser().getPhoneNumber(),
-                            meetingTopic.getText().toString(), meetingLocation.getText().toString(), tempCalendar.getTime().getTime(), tempCalendar2.getTime().getTime(), 1));
-            finish();
+        }else {
+            Toast.makeText(this, R.string.some_field_is_empty,Toast.LENGTH_SHORT).show();
         }
     }
 
@@ -118,6 +130,10 @@ public class AddEventActivity extends AppCompatActivity implements CalendarDateP
         setContentView(R.layout.activity_add_event);
         ButterKnife.bind(this);
         db = FirebaseDatabase.getInstance().getReference();
+        progressDialog = new ProgressDialog(this);
+        progressDialog.setMessage(getString(R.string.connecting));
+        progressDialog.setCancelable(false);
+        progressDialog.show();
 
         userList.setChoiceMode(ListView.CHOICE_MODE_MULTIPLE);
         fragmentLayout.setVisibility(View.INVISIBLE);
@@ -132,8 +148,8 @@ public class AddEventActivity extends AppCompatActivity implements CalendarDateP
             } else {
                 maxVal = maxValue.intValue();
             }
-            startTime.setText("Start:\n" + minutesToHour(minValue.intValue()));
-            endTime.setText("End:\n" + minutesToHour(maxVal));
+            startTime.setText(getString(R.string.start_time) + minutesToHour(minValue.intValue()));
+            endTime.setText(getString(R.string.end_time) + minutesToHour(maxVal));
         });
 
         meetingLocation.setOnClickListener(v -> {
@@ -186,6 +202,30 @@ public class AddEventActivity extends AppCompatActivity implements CalendarDateP
             }
             meetingContacts.setText(usersString);
         });
+
+
+
+        FirebaseDatabase.getInstance().getReference(".info/connected").addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot snapshot) {
+                boolean connected = snapshot.getValue(Boolean.class);
+                connectionCounter++;
+                if (!connected) {
+                    if (connectionCounter == 2) {
+                        Toast.makeText(AddEventActivity.this, "No internet connection.", Toast.LENGTH_SHORT).show();
+                        finish();
+                        connectionCounter = 0;
+                    }
+                }else{
+                    progressDialog.hide();
+                }
+            }
+
+            @Override
+            public void onCancelled(DatabaseError error) {
+
+            }
+        });
     }
 
     @Override
@@ -206,7 +246,7 @@ public class AddEventActivity extends AppCompatActivity implements CalendarDateP
         SimpleDateFormat sdfDate = new SimpleDateFormat("dd-MM-yyyy");
         String strDate = sdfDate.format(date);
         if (currentDate.getTime().getTime() > date.getTime()) {
-            Toast.makeText(this, "False date!", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, R.string.false_date, Toast.LENGTH_SHORT).show();
         } else {
             meetingDate.setText(strDate);
         }

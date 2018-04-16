@@ -3,8 +3,10 @@ package com.example.tesseract.meetingapp.Activity.Auth;
 import android.app.ProgressDialog;
 import android.content.Intent;
 import android.os.Bundle;
+import android.provider.Settings;
 import android.support.annotation.Nullable;
 import android.support.design.widget.Snackbar;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.text.TextUtils;
 import android.view.View;
@@ -23,7 +25,6 @@ import com.google.firebase.auth.PhoneAuthCredential;
 import com.google.firebase.auth.PhoneAuthProvider;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
-import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 
@@ -69,40 +70,66 @@ public class LoginActivity extends AppCompatActivity implements
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
         ButterKnife.bind(this);
+
+        initViews();
+        initFirebase();
+
+
+    }
+
+    private void initViews() {
+        progressDialog = new ProgressDialog(this);
+        progressDialog.setMessage(getString(R.string.please_wait));
+        progressDialog.setCancelable(false);
+        progressDialog.show();
         startButton.setOnClickListener(this);
         nicknameButton.setOnClickListener(this);
         verifyButton.setOnClickListener(this);
         resendButton.setOnClickListener(this);
-
         verifyButton.setVisibility(View.INVISIBLE);
         resendButton.setVisibility(View.INVISIBLE);
         nicknameButton.setVisibility(View.INVISIBLE);
-
-        progressDialog = new ProgressDialog(getApplicationContext());
-        progressDialog.setMessage("Please wait...");
-        progressDialog.setCancelable(false);
-        progressDialog.show();
-
         nicknameField.setVisibility(View.INVISIBLE);
         verificationField.setVisibility(View.INVISIBLE);
+    }
 
-        DatabaseReference database = FirebaseDatabase.getInstance().getReference();
-        DatabaseReference ref = database.child("users");
-        ref.addValueEventListener(new ValueEventListener() {
+    private void initFirebase() {
+        FirebaseDatabase.getInstance().getReference(".info/connected").addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot snapshot) {
+                boolean connected = snapshot.getValue(Boolean.class);
+                progressDialog.hide();
+                if (!connected) {
+                        showNoInternetAlertDialog();
+                } else {
+                    if (alert != null) {
+                        alert.hide();
+                    }
+                }
+            }
+
+            @Override
+            public void onCancelled(DatabaseError error) {
+
+            }
+        });
+
+        FirebaseDatabase.getInstance().getReference().child("users").addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
+                progressDialog.hide();
                 userList.clear();
                 for (DataSnapshot ds : dataSnapshot.getChildren()) {
                     User user = ds.getValue(User.class);
                     userList.add(user);
                 }
-                progressDialog.hide();
             }
 
             @Override
-            public void onCancelled(DatabaseError databaseError) {//380964352471
+            public void onCancelled(DatabaseError databaseError) {
 
             }
+
         });
 
         mAuth = FirebaseAuth.getInstance();
@@ -110,8 +137,8 @@ public class LoginActivity extends AppCompatActivity implements
             @Override
             public void onVerificationCompleted(PhoneAuthCredential credential) {
                 if (phoneNumberHaveNickname) {
-                    signInWithPhoneAuthCredential(credential,true);
-                }else{
+                    signInWithPhoneAuthCredential(credential, true);
+                } else {
                     nicknameField.setVisibility(View.VISIBLE);
                     nicknameButton.setVisibility(View.VISIBLE);
                     verificationField.setVisibility(View.INVISIBLE);
@@ -124,7 +151,7 @@ public class LoginActivity extends AppCompatActivity implements
             @Override
             public void onVerificationFailed(FirebaseException e) {
                 if (e instanceof FirebaseAuthInvalidCredentialsException) {
-                    phoneNumberField.setError("Invalid phone number.");
+                    phoneNumberField.setError(getString(R.string.invalid_phone_number));
                     phoneNumberField.setVisibility(View.VISIBLE);
                     verificationField.setVisibility(View.INVISIBLE);
                     verifyButton.setVisibility(View.INVISIBLE);
@@ -132,7 +159,7 @@ public class LoginActivity extends AppCompatActivity implements
                     nicknameField.setVisibility(View.VISIBLE);
                 } else if (e instanceof FirebaseTooManyRequestsException) {
                     resendButton.setVisibility(View.VISIBLE);
-                    Snackbar.make(findViewById(android.R.id.content), "Quota exceeded.",
+                    Snackbar.make(findViewById(android.R.id.content), R.string.quota_exceeded,
                             Snackbar.LENGTH_SHORT).show();
                 }
             }
@@ -157,17 +184,37 @@ public class LoginActivity extends AppCompatActivity implements
         };
     }
 
-    private void signInWithPhoneAuthCredential(PhoneAuthCredential credential,boolean auth) {
+    @Override
+    protected void onResume() {
+        super.onResume();
+    }
+
+    AlertDialog alert;
+
+    private void showNoInternetAlertDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("No Internet")
+                .setMessage("Please, connect to wi-fi.")
+                .setCancelable(false)
+                .setNegativeButton("Connect",
+                        (dialog, id) -> {
+                            startActivity(new Intent(Settings.ACTION_WIFI_SETTINGS));
+                        });
+        alert = builder.create();
+        alert.show();
+    }
+
+    private void signInWithPhoneAuthCredential(PhoneAuthCredential credential, boolean auth) {
         mAuth.signInWithCredential(credential).addOnCompleteListener(this, task -> {
             if (task.isSuccessful()) {
                 FirebaseUser user = task.getResult().getUser();
                 startActivity(new Intent(LoginActivity.this, MeetingsActivity.class));
-                if(!auth){
+                if (!auth) {
                     FirebaseDatabase.getInstance().getReference()
                             .child("users")
                             .child(user.getPhoneNumber())
                             .setValue(new User(user.getPhoneNumber(), nicknameField.getText().toString()));
-                }else{
+                } else {
                     FirebaseDatabase.getInstance().getReference()
                             .child("users")
                             .child(user.getPhoneNumber())
@@ -176,7 +223,7 @@ public class LoginActivity extends AppCompatActivity implements
                 finish();
             } else {
                 if (task.getException() instanceof FirebaseAuthInvalidCredentialsException) {
-                    verificationField.setError("Invalid code.");
+                    verificationField.setError(getString(R.string.invalid_code));
                 }
             }
         });
@@ -193,10 +240,10 @@ public class LoginActivity extends AppCompatActivity implements
 
     private void verifyPhoneNumberWithCode(String verificationId, String code) {
         PhoneAuthCredential credential = PhoneAuthProvider.getCredential(verificationId, code);
-        if(phoneNumberHaveNickname){
-            signInWithPhoneAuthCredential(credential,true);
-        }else{
-            signInWithPhoneAuthCredential(credential,false);
+        if (phoneNumberHaveNickname) {
+            signInWithPhoneAuthCredential(credential, true);
+        } else {
+            signInWithPhoneAuthCredential(credential, false);
         }
 
     }
@@ -213,7 +260,7 @@ public class LoginActivity extends AppCompatActivity implements
     private boolean validatePhoneNumber() {
         String phoneNumber = phoneNumberField.getText().toString();
         if (TextUtils.isEmpty(phoneNumber)) {
-            phoneNumberField.setError("Invalid phone number.");
+            phoneNumberField.setError(getString(R.string.invalid_phone_number));
             return false;
         }
         return true;
@@ -259,10 +306,10 @@ public class LoginActivity extends AppCompatActivity implements
             case R.id.button_verify_phone:
                 String code = verificationField.getText().toString();
                 if (TextUtils.isEmpty(code)) {
-                    verificationField.setError("Cannot be empty.");
+                    verificationField.setError(getString(R.string.empty_field));
                     return;
                 }
-                verifyPhoneNumberWithCode(mVerificationId,code);
+                verifyPhoneNumberWithCode(mVerificationId, code);
                 break;
             case R.id.button_resend:
                 resendVerificationCode(phoneNumberField.getText().toString(), mResendToken);
@@ -271,7 +318,7 @@ public class LoginActivity extends AppCompatActivity implements
                 if (!validateNickname()) {
                     return;
                 }
-                signInWithPhoneAuthCredential(authCredential,false);
+                signInWithPhoneAuthCredential(authCredential, false);
                 break;
         }
 
