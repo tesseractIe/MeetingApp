@@ -47,9 +47,11 @@ public class AddEventActivity extends AppCompatActivity implements CalendarDateP
     private int startTimeInSec;
     private int endTimeInSec;
     private List<User> selectedUsers;
+    User me;
     private DatabaseReference db;
     int connectionCounter = 0;
     private ProgressDialog progressDialog;
+    List<User> userListTemp = new ArrayList<>();
 
     private FirebaseListAdapter<User> adapter;
 
@@ -72,7 +74,7 @@ public class AddEventActivity extends AppCompatActivity implements CalendarDateP
     @BindView(R.id.end_time)
     TextView endTime;
     @BindView(R.id.user_list)
-    ListView userList;
+    ListView userListView;
 
     @OnClick(R.id.button_contacts_continue)
     public void contactsContinue() {
@@ -104,10 +106,9 @@ public class AddEventActivity extends AppCompatActivity implements CalendarDateP
                 Toast.makeText(this, R.string.false_time, Toast.LENGTH_SHORT).show();
             } else {
                 List<UserMeetingStatus> phoneNumbers = new ArrayList<>();
-                UserMeetingStatus list = new UserMeetingStatus(FirebaseAuth.getInstance().getCurrentUser().getPhoneNumber(), 1);
-                phoneNumbers.add(list);
+                phoneNumbers.add(new UserMeetingStatus(me.getPhoneNumber(),me.getNickname(),2));
                 for (User u : selectedUsers) {
-                    phoneNumbers.add(new UserMeetingStatus(u.getPhoneNumber(), 1));
+                    phoneNumbers.add(new UserMeetingStatus(u.getPhoneNumber(),u.getNickname(), 1));
                 }
                 db.child("meetings").push()
                         .setValue(new Meeting(phoneNumbers, FirebaseAuth.getInstance().getCurrentUser().getPhoneNumber(),
@@ -135,7 +136,7 @@ public class AddEventActivity extends AppCompatActivity implements CalendarDateP
         progressDialog.setCancelable(false);
         progressDialog.show();
 
-        userList.setChoiceMode(ListView.CHOICE_MODE_MULTIPLE);
+        userListView.setChoiceMode(ListView.CHOICE_MODE_MULTIPLE);
         fragmentLayout.setVisibility(View.INVISIBLE);
         selectedUsers = new ArrayList<>();
 
@@ -167,11 +168,13 @@ public class AddEventActivity extends AppCompatActivity implements CalendarDateP
                     .setOnDateSetListener(AddEventActivity.this);
             cdp.show(getSupportFragmentManager(), FRAG_TAG_DATE_PICKER);
         });
-        List<User> userListTemp = new ArrayList<>();
         adapter = new FirebaseListAdapter<User>(this, User.class, R.layout.item_user, db.child("users")) {
             @Override
             protected void populateView(View v, User model, int position) {
                 userListTemp.add(position, model);
+                if(model.getPhoneNumber().equals(FirebaseAuth.getInstance().getCurrentUser().getPhoneNumber())){
+                    me = model;
+                }
                 TextView messageUser = v.findViewById(R.id.message_user);
                 TextView messageText = v.findViewById(R.id.message_text);
                 messageUser.setText(model.getNickname());
@@ -180,19 +183,19 @@ public class AddEventActivity extends AppCompatActivity implements CalendarDateP
 
             @Override
             public boolean isEnabled(int position) {
-                for (User u : userListTemp) {
-                    if (selectedUsers.contains(u)) {
-                        return false;
-                    }
-                }
                 if (FirebaseAuth.getInstance().getCurrentUser().getPhoneNumber().equals(userListTemp.get(position).getPhoneNumber())) {
                     return false;
+                }
+                for(User u: selectedUsers){
+                    if(userListTemp.get(position).equals(u)){
+                        return false;
+                    }
                 }
                 return true;
             }
         };
-        userList.setAdapter(adapter);
-        userList.setOnItemClickListener((parent, view, position, id) -> {
+        userListView.setAdapter(adapter);
+        userListView.setOnItemClickListener((parent, view, position, id) -> {
             mainLayout.setVisibility(View.VISIBLE);
             fragmentLayout.setVisibility(View.INVISIBLE);
             selectedUsers.add(userListTemp.get(position));

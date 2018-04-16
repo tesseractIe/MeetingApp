@@ -29,6 +29,7 @@
         <meta-data
             android:name="com.google.android.geo.API_KEY"
             android:value="AIzaSyBBi8J61agS7_4IVC_WR9eK1a8Hv1WA1E4"/>
+        <service android:name=".Services.NotificationService" />
     </application>
 
 

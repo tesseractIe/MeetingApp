@@ -29,6 +29,15 @@ public class Meeting {
         return meetingUsers;
     }
 
+    public UserMeetingStatus getMeetingUserByPhoneNumber(String phoneNumber){
+        for (UserMeetingStatus u: meetingUsers){
+            if(u.getPhoneNumber().equals(phoneNumber)){
+                return u;
+            }
+        }
+        return null;
+    }
+
     public String getUserPhoneNumber() {
         return userPhoneNumber;
     }

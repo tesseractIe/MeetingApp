@@ -12,7 +12,6 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
-import android.widget.Toast;
 
 import com.alamkanak.weekview.WeekView;
 import com.alamkanak.weekview.WeekViewEvent;
@@ -63,6 +62,7 @@ public class MeetingsActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_mettings);
         ButterKnife.bind(this);
+
         initViews();
         initAlertDialog();
         initViewsListeners();
@@ -79,23 +79,13 @@ public class MeetingsActivity extends AppCompatActivity {
     }
 
 
-    int connectionCounter = 0;
-
     private void initFirebase() {
         FirebaseDatabase.getInstance().getReference(".info/connected").addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot snapshot) {
                 boolean connected = snapshot.getValue(Boolean.class);
-                connectionCounter++;
                 if (!connected) {
-                    if (connectionCounter > 1) {
-                        progressDialog.hide();
-                        addButton.hide();
-                        Toast.makeText(MeetingsActivity.this, R.string.offline_mode, Toast.LENGTH_SHORT).show();
-                    }else{
-                        connectionCounter = 0;
-                    }
-
+                    addButton.hide();
                 } else {
                     progressDialog.hide();
                     addButton.show();
@@ -130,7 +120,7 @@ public class MeetingsActivity extends AppCompatActivity {
         mWeekView.setOnEventClickListener((WeekViewEvent event, RectF eventRect) -> {
             for (UserMeetingStatus u : myMeetings.get((int) event.getId()).getMeetingUsers()) {
                 if (u.getPhoneNumber().equals(FirebaseAuth.getInstance().getCurrentUser().getPhoneNumber())) {
-                    if (u.getMeetingStatus() == 1) {
+                    if (!myMeetings.get((int) event.getId()).getUserPhoneNumber().equals(FirebaseAuth.getInstance().getCurrentUser().getPhoneNumber())) {
                         dialog.show();
                         selectedMeeting = u;
                     }
@@ -196,7 +186,6 @@ public class MeetingsActivity extends AppCompatActivity {
 
     @Override
     protected void onResume() {
-        db.onDisconnect().setValue("Offline Mode");
         db.child("meetings").addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
@@ -259,7 +248,6 @@ public class MeetingsActivity extends AppCompatActivity {
         startActivity(intent);
     }
 
-
     /**
      * @param myMeetings
      * @return - list of weekView events
@@ -274,7 +262,7 @@ public class MeetingsActivity extends AppCompatActivity {
             StringBuilder usersStatus = new StringBuilder();
 
             for (UserMeetingStatus u : myMeetings.get(i).getMeetingUsers()) {
-                usersStatus.append(u.getPhoneNumber()).append(" : ");
+                usersStatus.append(u.getUserName()).append(" : ");
                 if (u.getMeetingStatus() == 1) {
                     usersStatus.append("o").append("\n");
                 }
@@ -292,13 +280,13 @@ public class MeetingsActivity extends AppCompatActivity {
                 if (FirebaseAuth.getInstance().getCurrentUser().getPhoneNumber().equals(u.getPhoneNumber())) {
                     switch (u.getMeetingStatus()) {
                         case 1:
-                            newEvent.setColor(Color.rgb(225, 255, 0));
+                            newEvent.setColor(Color.rgb(255, 153, 51));
                             break;
                         case 2:
-                            newEvent.setColor(Color.rgb(0, 255, 0));
+                            newEvent.setColor(Color.rgb(51, 204, 51));
                             break;
                         case 3:
-                            newEvent.setColor(Color.rgb(225, 0, 0));
+                            newEvent.setColor(Color.rgb(153, 0, 0));
                             break;
                     }
                 }

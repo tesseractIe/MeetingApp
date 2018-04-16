@@ -70,11 +70,8 @@ public class LoginActivity extends AppCompatActivity implements
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
         ButterKnife.bind(this);
-
         initViews();
         initFirebase();
-
-
     }
 
     private void initViews() {
@@ -100,7 +97,7 @@ public class LoginActivity extends AppCompatActivity implements
                 boolean connected = snapshot.getValue(Boolean.class);
                 progressDialog.hide();
                 if (!connected) {
-                        showNoInternetAlertDialog();
+                    showNoInternetAlertDialog();
                 } else {
                     if (alert != null) {
                         alert.hide();
