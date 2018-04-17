@@ -153,7 +153,6 @@ public class LoginActivity extends AppCompatActivity implements
                     verificationField.setVisibility(View.INVISIBLE);
                     verifyButton.setVisibility(View.INVISIBLE);
                     startButton.setVisibility(View.VISIBLE);
-                    nicknameField.setVisibility(View.VISIBLE);
                 } else if (e instanceof FirebaseTooManyRequestsException) {
                     resendButton.setVisibility(View.VISIBLE);
                     Snackbar.make(findViewById(android.R.id.content), R.string.quota_exceeded,
@@ -240,7 +239,12 @@ public class LoginActivity extends AppCompatActivity implements
         if (phoneNumberHaveNickname) {
             signInWithPhoneAuthCredential(credential, true);
         } else {
-            signInWithPhoneAuthCredential(credential, false);
+            nicknameField.setVisibility(View.VISIBLE);
+            nicknameButton.setVisibility(View.VISIBLE);
+            verificationField.setVisibility(View.INVISIBLE);
+            verifyButton.setVisibility(View.INVISIBLE);
+            resendButton.setVisibility(View.INVISIBLE);
+            authCredential = credential;
         }
 
     }

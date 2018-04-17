@@ -1,6 +1,7 @@
 package com.example.tesseract.meetingapp.Activity.Auth;
 
 import android.content.Intent;
+import android.os.Build;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 
@@ -20,7 +21,12 @@ public class SplashActivity extends AppCompatActivity {
         FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
         if (user != null) {
             if(!NotificationService.isInstanceCreated()){
-                startService(new Intent(this, NotificationService.class));
+                Intent intent = new Intent(this, NotificationService.class);
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    startForegroundService(intent);
+                }else {
+                    startService(intent);
+                }
             }
             Intent intent = new Intent(this, MeetingsActivity.class);
             startActivity(intent);

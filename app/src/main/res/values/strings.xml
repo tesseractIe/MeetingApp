@@ -29,5 +29,6 @@
     <string name="connect">Connect</string>
     <string name="some_field_is_empty">Some field is failed.</string>
     <string name="connecting">Connecting...</string>
+    <string name="new_meeting">New Meeting</string>
 
 </resources>
